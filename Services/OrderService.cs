@@ -1,44 +1,36 @@
 ﻿using ProvaPub.Models;
 using ProvaPub.Repository;
 
-namespace ProvaPub.Services
+
+public class OrderService
 {
-	public class OrderService
-	{
-        TestDbContext _ctx;
+    private readonly TestDbContext _ctx;
+    private readonly IEnumerable<IPaymentProcessor> _paymentProcessors;
 
-        public OrderService(TestDbContext ctx)
+    public OrderService(TestDbContext ctx, IEnumerable<IPaymentProcessor> paymentProcessors)
+    {
+        _ctx = ctx;
+        _paymentProcessors = paymentProcessors;
+    }
+
+    public async Task<Order> PayOrder(string paymentMethod, decimal paymentValue, int customerId)
+    {
+        var processor = _paymentProcessors.FirstOrDefault(p => p.Method == paymentMethod.ToLower());
+        if (processor == null)
+            throw new InvalidOperationException("Método de pagamento não suportado.");
+
+        await processor.ProcessPayment(paymentValue, customerId);
+
+        var order = new Order
         {
-            _ctx = ctx;
-        }
+            CustomerId = customerId,
+            Value = paymentValue,
+            OrderDate = DateTime.UtcNow 
+        };
 
-        public async Task<Order> PayOrder(string paymentMethod, decimal paymentValue, int customerId)
-		{
-			if (paymentMethod == "pix")
-			{
-				//Faz pagamento...
-			}
-			else if (paymentMethod == "creditcard")
-			{
-				//Faz pagamento...
-			}
-			else if (paymentMethod == "paypal")
-			{
-				//Faz pagamento...
-			}
+        _ctx.Orders.Add(order);
+        await _ctx.SaveChangesAsync();
 
-			return await InsertOrder(new Order() //Retorna o pedido para o controller
-            {
-                Value = paymentValue
-            });
-
-
-		}
-
-		public async Task<Order> InsertOrder(Order order)
-        {
-			//Insere pedido no banco de dados
-			return (await _ctx.Orders.AddAsync(order)).Entity;
-        }
-	}
+        return order;
+    }
 }

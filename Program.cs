@@ -14,8 +14,12 @@ builder.Services.AddSingleton<RandomService>();
 builder.Services.AddDbContext<TestDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ctx")));
 
+builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<IPaymentProcessor, PixPayment>();
+builder.Services.AddScoped<IPaymentProcessor, CreditCardPayment>();
+builder.Services.AddScoped<IPaymentProcessor, PaypalPayment>();
 
 var app = builder.Build();
 
