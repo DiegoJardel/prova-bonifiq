@@ -20,6 +20,8 @@ builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<IPaymentProcessor, PixPayment>();
 builder.Services.AddScoped<IPaymentProcessor, CreditCardPayment>();
 builder.Services.AddScoped<IPaymentProcessor, PaypalPayment>();
+builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
+
 
 var app = builder.Build();
 

@@ -7,11 +7,13 @@ namespace ProvaPub.Services
     public class CustomerService
     {
         private readonly TestDbContext _ctx;
+        private readonly IDateTimeProvider _dateTimeProvider;
         private const int PageSize = 10;
 
-        public CustomerService(TestDbContext ctx)
+        public CustomerService(TestDbContext ctx, IDateTimeProvider dateTimeProvider)
         {
             _ctx = ctx;
+            _dateTimeProvider = dateTimeProvider;
         }
 
         private PagedList<T> GetPaged<T>(IQueryable<T> query, int page)
@@ -42,15 +44,15 @@ namespace ProvaPub.Services
             var customer = await _ctx.Customers.FindAsync(customerId);
             if (customer == null) throw new InvalidOperationException($"Customer Id {customerId} does not exists");
 
-            var baseDate = DateTime.UtcNow.AddMonths(-1);
+            var baseDate = _dateTimeProvider.UtcNow.AddMonths(-1);
             var ordersInThisMonth = await _ctx.Orders.CountAsync(s => s.CustomerId == customerId && s.OrderDate >= baseDate);
             if (ordersInThisMonth > 0) return false;
 
             var haveBoughtBefore = await _ctx.Customers.CountAsync(s => s.Id == customerId && s.Orders.Any());
             if (haveBoughtBefore == 0 && purchaseValue > 100) return false;
 
-            if (DateTime.UtcNow.Hour < 8 || DateTime.UtcNow.Hour > 18 ||
-                DateTime.UtcNow.DayOfWeek == DayOfWeek.Saturday || DateTime.UtcNow.DayOfWeek == DayOfWeek.Sunday)
+            if (_dateTimeProvider.UtcNow.Hour < 8 || _dateTimeProvider.UtcNow.Hour > 18 ||
+                _dateTimeProvider.UtcNow.DayOfWeek == DayOfWeek.Saturday || _dateTimeProvider.UtcNow.DayOfWeek == DayOfWeek.Sunday)
                 return false;
 
             return true;
